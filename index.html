@@ -7,17 +7,66 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
     <link rel="stylesheet" href="./main.css">
+    <script src="./main.js"></script>
 </head>
 
 <body>
-    <p>Do a prime number search from <input id="from" value="1"> to <input id="to" value="500000" size="200">.</p>
-    <button onclick="doSearch()">Start Searching</button>
+
+    <p>Do a prime number search from <input id="from" value="1"> to <input id="to" value="2000000" size="100">.</p>
+    <button onclick="doSearch()" id="searchButton">Start Searching</button>
+    <button onclick="cancelSearch()">Cancel</button>
 
     <div id="primeContainer">
     </div>
 
     <div id="status"></div>
-    <script src="./main.js"></script>
-</body>
+
+
+    <script id="FindPrimes" type="javascript/worker">
+
+onmessage = function(event) {  
+  var primes = findPrimes(event.data.from, event.data.to);
+  postMessage(
+   {messageType: "PrimeList", data: primes}
+  );
+};
+
+function findPrimes(fromNumber, toNumber) {
+  // Create an array containing all integers between the two specified numbers.
+  var list = [];
+  for (var i=fromNumber; i<=toNumber; i++) {
+    if (i>1) list.push(i);
+  }
+
+  // Test for primes.
+  var maxDiv = Math.round(Math.sqrt(toNumber));
+  var primes = [];
+
+  var previousProgress;
+
+  for (var i=0; i<list.length; i++) {
+    var failed = false;
+    for (var j=2; j<=maxDiv; j++) {
+      if ((list[i] != j) && (list[i] % j == 0)) {
+        failed = true;
+      } else if ((j==maxDiv) && (failed == false)) {
+        primes.push(list[i]);
+      }
+    }
+
+    // Give a progress update.
+    var progress = Math.round(i/list.length*100);
+    if (progress != previousProgress) {
+      postMessage(
+       {messageType: "Progress", data: progress}
+      );
+      previousProgress = progress;   
+    }
+  }
+
+  return primes;
+}
+
+  </script>
 
 </html>
